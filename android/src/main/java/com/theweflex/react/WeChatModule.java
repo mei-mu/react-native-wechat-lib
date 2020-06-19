@@ -137,10 +137,13 @@ public class WeChatModule extends ReactContextBaseJavaModule implements IWXAPIEv
         modules.remove(this);
     }
 
-    public static void handleIntent(Intent intent) {
+    public static boolean handleIntent(Intent intent) {
+        boolean handled = false;
         for (WeChatModule mod : modules) {
             mod.api.handleIntent(intent, mod);
+            handled = true;
         }
+        return handled;
     }
 
     @ReactMethod
