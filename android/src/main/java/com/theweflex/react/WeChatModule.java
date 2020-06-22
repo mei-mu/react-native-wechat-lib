@@ -51,6 +51,8 @@ import com.tencent.mm.opensdk.openapi.IWXAPIEventHandler;
 import com.tencent.mm.opensdk.openapi.WXAPIFactory;
 import com.tencent.mm.opensdk.constants.ConstantsAPI;
 import com.tencent.mm.opensdk.modelbiz.SubscribeMessage;
+import android.util.Log;
+import com.facebook.react.bridge.LifecycleEventListener;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -63,10 +65,12 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.UUID;
 
-public class WeChatModule extends ReactContextBaseJavaModule implements IWXAPIEventHandler {
+public class WeChatModule extends ReactContextBaseJavaModule implements IWXAPIEventHandler, LifecycleEventListener {
     private String appId;
 
     private IWXAPI api = null;
+    public  boolean hostDestoryed = false;
+
     private final static String NOT_REGISTERED = "registerApp required.";
     private final static String INVOKE_FAILED = "WeChat API invoke returns false.";
     private final static String INVALID_ARGUMENT = "invalid argument.";
@@ -103,6 +107,8 @@ public class WeChatModule extends ReactContextBaseJavaModule implements IWXAPIEv
 
     public WeChatModule(ReactApplicationContext context) {
         super(context);
+
+        context.addLifecycleEventListener(this);
     }
 
     @Override
@@ -137,9 +143,30 @@ public class WeChatModule extends ReactContextBaseJavaModule implements IWXAPIEv
         modules.remove(this);
     }
 
+    @Override
+    public void onHostResume() {
+        Log.d("mini", "WeChatModule onHostResume");
+        this.hostDestoryed = false;
+    }
+
+    @Override
+    public void onHostPause() {
+        Log.d("mini", "WeChatModule onHostPause");
+     }
+
+     @Override
+     public void onHostDestroy() {
+        Log.d("mini", "WeChatModule onHostDestroy");
+        this.hostDestoryed = true;
+     }
+
     public static boolean handleIntent(Intent intent) {
         boolean handled = false;
         for (WeChatModule mod : modules) {
+            if (mod.hostDestoryed) {
+                Log.d("mini", "WeChatModule is Destoryed");
+                continue;
+            }
             mod.api.handleIntent(intent, mod);
             handled = true;
         }
